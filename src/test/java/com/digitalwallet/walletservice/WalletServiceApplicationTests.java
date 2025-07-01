@@ -1,10 +1,10 @@
-package com.example.demo;
+package com.digitalwallet.walletservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DemoApplicationTests {
+class WalletServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

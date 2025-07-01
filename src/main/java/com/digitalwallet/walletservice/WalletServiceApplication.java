@@ -1,13 +1,13 @@
-package com.example.demo;
+package com.digitalwallet.walletservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class DemoApplication {
+public class WalletServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
+		SpringApplication.run(WalletServiceApplication.class, args);
 	}
 
 }
