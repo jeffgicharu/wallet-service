@@ -1,3 +1,51 @@
+# Represents a user in the system
+type User {
+    id: ID!
+    username: String!
+    phoneNumber: String!
+    account: Account!
+    createdAt: String!
+}
+
+# Represents a user's wallet/account
+type Account {
+    id: ID!
+    balance: Float!
+    transactions: [Transaction!]
+}
+
+# Represents a single financial transaction
+type Transaction {
+    id: ID!
+    amount: Float!
+    type: TransactionType! # DEBIT or CREDIT
+    description: String!
+    sender: User
+    receiver: User
+    timestamp: String!
+}
+
+enum TransactionType {
+    DEBIT
+    CREDIT
+}
+
+# Payload returned on successful authentication
+type AuthPayload {
+    token: String!
+    user: User!
+}
+
+# --- Queries ---
 type Query {
-    hello: String
+    getUserProfile: User
+    getAccountBalance: Float
+    getTransactionHistory: [Transaction!]
+}
+
+# --- Mutations ---
+type Mutation {
+    registerUser(username: String!, phoneNumber: String!, pin: String!): AuthPayload!
+    login(phoneNumber: String!, pin: String!): AuthPayload!
+    transferFunds(receiverPhoneNumber: String!, amount: Float!): Transaction!
 }
