@@ -30,7 +30,7 @@ public class User {
     @Column(nullable = false)
     private String pin; // This will be hashed and stored
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
     private Account account;
 
     @CreationTimestamp
