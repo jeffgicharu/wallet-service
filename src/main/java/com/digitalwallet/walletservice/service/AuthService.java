@@ -69,12 +69,11 @@ public class AuthService {
     }
 
     public AuthPayload login(String phoneNumber, String pin) {
-        // 1. Authenticate the user
-        Authentication authentication = authenticationManager.authenticate(
+        // 1. Authenticate the user. An exception is thrown if it fails.
+        authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(phoneNumber, pin)
         );
 
-        // If authentication is successful, proceed. Otherwise, an exception is thrown.
         // 2. Find the user
         User user = userRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new UsernameNotFoundException("Login failed for user: " + phoneNumber));
