@@ -20,4 +20,9 @@ public class AuthController {
     public AuthPayload registerUser( @Argument String username, @Argument String phoneNumber, @Argument String pin) {
         return authService.registerUser(username, phoneNumber, pin);
     }
+
+    @MutationMapping
+    public AuthPayload login( @Argument String phoneNumber, @Argument String pin) {
+        return authService.login(phoneNumber, pin);
+    }
 }
