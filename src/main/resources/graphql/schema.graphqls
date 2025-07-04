@@ -38,7 +38,7 @@ type AuthPayload {
 
 # --- Queries ---
 type Query {
-    getUserProfile: User
+    me: User!
     getAccountBalance: Float
     getTransactionHistory: [Transaction!]
 }
