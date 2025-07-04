@@ -18,7 +18,7 @@ public class JwtService {
 
     // IMPORTANT: This key should be stored securely in application properties, not hardcoded.
     // For this project, we'll keep it here for simplicity.
-    private static final String SECRET_KEY = "YourSuperSecretKeyThatIsVeryLongAndSecure1234567890";
+    private static final String SECRET_KEY = "WW91clN1cGVyU2VjcmV0S2V5VGhhdElzVmVyeUxvbmdBbmRTZWN1cmUxMjM0NTY3ODkw";
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 hours
 
     public String generateToken(UserDetails userDetails) {
