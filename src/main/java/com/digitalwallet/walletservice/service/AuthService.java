@@ -22,32 +22,38 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager; // Add this
+    @Autowired
+    private AuthenticationManager authenticationManager; // Changed to field injection
 
-    // Update the constructor
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
+    // Update constructor to remove AuthenticationManager
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager; // Add this
     }
 
     @Transactional
     public AuthPayload registerUser(String username, String phoneNumber, String pin) {
+        // Check if user already exists
+        if (userRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+            throw new IllegalArgumentException("User with phone number " + phoneNumber + " already exists");
+        }
+
         // 1. Hash the incoming PIN
         String hashedPassword = passwordEncoder.encode(pin);
 
         // 2. Create the User entity
-        User user = new User();
-        user.setUsername(username);
-        user.setPhoneNumber(phoneNumber);
-        user.setPin(hashedPassword);
-
+        User user = User.builder()
+                .username(username)
+                .phoneNumber(phoneNumber)
+                .pin(hashedPassword)
+                .build();
 
         // 3. Create the associated Account
-        Account account = new Account();
-        account.setBalance(BigDecimal.ZERO); // Set initial balance to 0
-        account.setUser(user);
+        Account account = Account.builder()
+                .balance(BigDecimal.ZERO)
+                .user(user)
+                .build();
 
         // 4. Link the account to the user
         user.setAccount(account);

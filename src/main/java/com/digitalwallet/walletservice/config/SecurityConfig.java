@@ -47,7 +47,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(req -> req
-                        .anyRequest().permitAll()
+                        .requestMatchers("/graphql").permitAll() // Allow GraphQL endpoint
+                        .requestMatchers("/graphiql").permitAll() // Allow GraphiQL UI
+                        .anyRequest().authenticated() // Change from permitAll to authenticated
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider())
