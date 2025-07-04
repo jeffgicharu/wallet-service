@@ -26,12 +26,12 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
  @Configuration @EnableWebSecurity @EnableMethodSecurity @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+    // REMOVED JwtAuthFilter from constructor injection
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception { // INJECTED HERE INSTEAD
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
@@ -40,7 +40,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // Use the injected filter
 
         return http.build();
     }
@@ -61,7 +61,7 @@ public class SecurityConfig {
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder); // Typo corrected here
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
@@ -70,12 +70,11 @@ public class SecurityConfig {
         return username -> {
             com.digitalwallet.walletservice.model.User appUser = userRepository.findByPhoneNumber(username)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found with phone number: " + username));
-            
-            // This now returns the correct Spring Security User object
+
             return new org.springframework.security.core.userdetails.User(
                     appUser.getPhoneNumber(),
                     appUser.getPin(),
-                    new ArrayList<>() // Authorities/Roles
+                    new ArrayList<>()
             );
         };
     }
