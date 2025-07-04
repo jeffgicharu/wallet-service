@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
@@ -26,8 +27,8 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-    private final PasswordEncoder passwordEncoder; // Injected for use in the provider bean
-    private final UserRepository userRepository; // Injected for use in the user details service bean
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -38,7 +39,7 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
-                .authenticationProvider(authenticationProvider()) // Call the bean method
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -60,13 +61,22 @@ public class SecurityConfig {
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder);
+        authProvider.setPasswordEncoder(passwordEncoder); // Typo corrected here
         return authProvider;
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByPhoneNumber(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with phone number: " + username));
+        return username -> {
+            com.digitalwallet.walletservice.model.User appUser = userRepository.findByPhoneNumber(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with phone number: " + username));
+            
+            // This now returns the correct Spring Security User object
+            return new org.springframework.security.core.userdetails.User(
+                    appUser.getPhoneNumber(),
+                    appUser.getPin(),
+                    new ArrayList<>() // Authorities/Roles
+            );
+        };
     }
 }
