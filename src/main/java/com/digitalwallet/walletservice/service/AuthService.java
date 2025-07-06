@@ -4,7 +4,8 @@ package com.digitalwallet.walletservice.service;
 import com.digitalwallet.walletservice.model.Account;
 import com.digitalwallet.walletservice.model.User;
 import com.digitalwallet.walletservice.repository.UserRepository;
-import com.digitalwallet.walletservice.model.AuthPayload; // We will create this DTO
+import com.digitalwallet.walletservice.model.AuthPayload;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,8 +14,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronization;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class AuthService {
@@ -33,44 +38,51 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthPayload registerUser(String username, String phoneNumber, String pin) {
-        // Check if user already exists
+    public CompletableFuture<AuthPayload> registerUser(String username, String phoneNumber, String pin) {
+        CompletableFuture<AuthPayload> future = new CompletableFuture<>();
+
+        // Create and save the new user in a transaction
+        User savedUser = createNewUser(username, phoneNumber, pin);
+
+        // Register a callback to run after the transaction commits
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                // Generate JWT only after the user is committed
+                UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                        savedUser.getPhoneNumber(),
+                        savedUser.getPin(),
+                        new ArrayList<>()
+                );
+                String token = jwtService.generateToken(userDetails);
+                future.complete(new AuthPayload(token, savedUser));
+            }
+        });
+
+        return future;
+    }
+
+    @Transactional
+    public User createNewUser(String username, String phoneNumber, String pin) {
         if (userRepository.findByPhoneNumber(phoneNumber).isPresent()) {
             throw new IllegalArgumentException("User with phone number " + phoneNumber + " already exists");
         }
 
-        // 1. Hash the incoming PIN
         String hashedPassword = passwordEncoder.encode(pin);
 
-        // 2. Create the User entity
         User user = User.builder()
                 .username(username)
                 .phoneNumber(phoneNumber)
                 .pin(hashedPassword)
                 .build();
 
-        // 3. Create the associated Account
         Account account = Account.builder()
                 .balance(BigDecimal.ZERO)
                 .user(user)
                 .build();
 
-        // 4. Link the account to the user
         user.setAccount(account);
-
-        // 5. Save the user (which also saves the account due to cascading)
-        User savedUser = userRepository.save(user);
-
-        // 6. Generate a JWT for the new user
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-            savedUser.getPhoneNumber(),
-            savedUser.getPin(),
-            new ArrayList<>()
-        );
-        String token = jwtService.generateToken(userDetails);
-
-        // 7. Return the AuthPayload
-        return new AuthPayload(token, savedUser);
+        return userRepository.save(user);
     }
 
     public AuthPayload login(String phoneNumber, String pin) {

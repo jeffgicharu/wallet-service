@@ -24,6 +24,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.equals("/graphiql") || (path.equals("/graphql") && request.getAttribute(GraphQLRequestFilter.IS_PUBLIC_GRAPHQL_MUTATION) != null);
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
@@ -42,15 +48,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         userPhoneNumber = jwtService.extractUsername(jwt); // Implement this method in JwtService
 
         if (userPhoneNumber != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userPhoneNumber);
-            if (jwtService.isTokenValid(jwt, userDetails)) { // Implement this method in JwtService
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            try {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userPhoneNumber);
+                if (jwtService.isTokenValid(jwt, userDetails)) { // Implement this method in JwtService
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            } catch (Exception e) {
+                // Do nothing, let Spring Security handle the authentication failure
             }
         }
         filterChain.doFilter(request, response);

@@ -7,6 +7,8 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.stereotype.Controller;
 
+import java.util.concurrent.CompletableFuture;
+
 @Controller
 public class AuthController {
 
@@ -17,7 +19,7 @@ public class AuthController {
     }
 
     @MutationMapping
-    public AuthPayload registerUser( @Argument String username, @Argument String phoneNumber, @Argument String pin) {
+    public CompletableFuture<AuthPayload> registerUser(@Argument String username, @Argument String phoneNumber, @Argument String pin) {
         return authService.registerUser(username, phoneNumber, pin);
     }
 

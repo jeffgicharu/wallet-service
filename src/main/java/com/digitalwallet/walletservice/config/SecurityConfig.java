@@ -4,6 +4,7 @@ import com.digitalwallet.walletservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -20,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import com.digitalwallet.walletservice.config.GraphQLExceptionResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,7 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
 
     private final UserRepository userRepository;
+    private final GraphQLRequestFilter graphQLRequestFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -37,7 +40,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Lazy
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
@@ -50,14 +52,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> req
                         .requestMatchers("/graphql").permitAll() // Allow GraphQL endpoint
                         .requestMatchers("/graphiql").permitAll() // Allow GraphiQL UI
-                        .anyRequest().authenticated() // Change from permitAll to authenticated
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(graphQLRequestFilter, jwtAuthFilter.getClass());
 
         return http.build();
     }
+
+    
+
+    
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -91,5 +98,10 @@ public class SecurityConfig {
                     new ArrayList<>()
             );
         };
+    }
+
+    @Bean
+    public GraphQLExceptionResolver graphQLExceptionResolver() {
+        return new GraphQLExceptionResolver();
     }
 }
